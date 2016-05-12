@@ -105,6 +105,25 @@ class HangmanApi(remote.Service):
         return GameForms(items=[game.to_form() for game in games])
 
 
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=GameForm,
+                      path='game/cancel/{urlsafe_game_key}',
+                      name='cancel_game',
+                      http_method='POST')
+    def cancel_game(self, request):
+        """Return the current game state."""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if game:
+            if game.game_over:
+                # TODO: get result for game from SCORE
+                return game.to_form('Game is over. Cannot cancel game.')
+            else:
+                game.end_game(False)
+                return game.to_form('Game canceled!')
+        else:
+            raise endpoints.NotFoundException('Game not found!')
+
+
     @endpoints.method(request_message=MAKE_MOVE_REQUEST,
                       response_message=GameForm,
                       path='game/{urlsafe_game_key}',
