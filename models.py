@@ -9,12 +9,14 @@ from protorpc import messages
 from google.appengine.ext import ndb
 
 
+# ========== USER ==========
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
     email =ndb.StringProperty()
 
 
+# ========== GAME ==========
 class Game(ndb.Model):
     """Game object"""
     word = ndb.StringProperty(required=True)
@@ -75,7 +77,7 @@ class Game(ndb.Model):
     def is_guess_correct(self, guess):
         return self.word.find(guess) >= 0
 
-    def to_form(self, message):
+    def to_form(self, message=''):
         """Returns a GameForm representation of the Game"""
         form = GameForm()
         form.urlsafe_key = self.key.urlsafe()
@@ -108,6 +110,7 @@ class GameDifficulty(messages.Enum):
     EXPERT = 4
 
 
+# ========== SCORE ==========
 class Score(ndb.Model):
     """Score object"""
     user = ndb.KeyProperty(required=True, kind='User')
@@ -120,6 +123,7 @@ class Score(ndb.Model):
                          date=str(self.date), guesses=self.guesses)
 
 
+# ========== FORMS ==========
 class GameForm(messages.Message):
     """GameForm for outbound game state information"""
     urlsafe_key = messages.StringField(1, required=True)
@@ -130,6 +134,11 @@ class GameForm(messages.Message):
     guess_status = messages.StringField(6, required=True)
     user_name = messages.StringField(7, required=True)
     difficulty = messages.EnumField('GameDifficulty', 8)
+
+
+class GameForms(messages.Message):
+    """Return multiple GameForms"""
+    items = messages.MessageField(GameForm, 1, repeated=True)
 
 
 class NewGameForm(messages.Message):
@@ -161,6 +170,7 @@ class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
 
 
+# ========== GAME HELPER FUNCTIONS ==========
 def get_attempts_allowed(difficulty):
     """
     This method determines the number of incorrect guesses
@@ -177,7 +187,7 @@ def get_attempts_allowed(difficulty):
     elif difficulty == GameDifficulty.HARD:
         attempts = 7
     elif difficulty == GameDifficulty.EXPERT:
-        attempts = 6
+        attempts = 5
     else:
         attempts = 8
     return attempts

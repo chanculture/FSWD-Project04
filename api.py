@@ -5,13 +5,13 @@ from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, Score
-from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreForms
+from models import StringMessage, NewGameForm, GameForm, GameForms,\
+    MakeMoveForm, ScoreForm, ScoreForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
 GET_GAME_REQUEST = endpoints.ResourceContainer(
-        urlsafe_game_key=messages.StringField(1),)
+    urlsafe_game_key=messages.StringField(1),)
 MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
@@ -24,6 +24,8 @@ MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
     """Game API"""
+
+# ========== USERS ENDPOINT API METHODS ==========
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=StringMessage,
                       path='user',
@@ -39,6 +41,8 @@ class HangmanApi(remote.Service):
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
 
+
+# ========== GAME ENDPOINT API METHODS ==========
     @endpoints.method(request_message=NEW_GAME_REQUEST,
                       response_message=GameForm,
                       path='game',
@@ -66,6 +70,7 @@ class HangmanApi(remote.Service):
         # taskqueue.add(url='/tasks/cache_average_attempts')
         return game.to_form('Good luck playing! Take a guess, letter or word!')
 
+
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=GameForm,
                       path='game/{urlsafe_game_key}',
@@ -75,9 +80,30 @@ class HangmanApi(remote.Service):
         """Return the current game state."""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if game:
-            return game.to_form('Time to make a move!')
+            if game.game_over:
+                # TODO: get result for game from SCORE
+                return game.to_form('Game is over.')
+            else:
+                return game.to_form('Make a move!')
         else:
             raise endpoints.NotFoundException('Game not found!')
+
+    # TODO: This might just take the USER_REQUEST resource container
+    @endpoints.method(request_message=USER_REQUEST,
+                      response_message=GameForms,
+                      path='user/{user_name}/games',
+                      name='get_user_games',
+                      http_method='GET')
+    def get_user_games(self, request):
+        """Returns all the User's games"""
+        user = User.query(User.name == request.user_name).get()
+        if not user:
+            raise endpoints.NotFoundException(
+                    'A User with that name does not exist!')
+
+        games = Game.query(Game.user == user.key)
+        return GameForms(items=[game.to_form() for game in games])
+
 
     @endpoints.method(request_message=MAKE_MOVE_REQUEST,
                       response_message=GameForm,
@@ -90,7 +116,6 @@ class HangmanApi(remote.Service):
         if game.game_over:
             return game.to_form('Game already over!')
         # TODO: what is the best way to check is a value exists in the request
-        # (None, [])
         # Check to see if guess is in the request
         if getattr(request, 'guess') in (None, []):
             raise endpoints.BadRequestException('The request is missing a guess!')
@@ -138,7 +163,7 @@ class HangmanApi(remote.Service):
             game.put()
             return game.to_form(msg + ' Keep Going!')
 
-
+# ========== SCORES ENDPOINT API METHODS ==========
     @endpoints.method(response_message=ScoreForms,
                       path='scores',
                       name='get_scores',
