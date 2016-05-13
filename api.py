@@ -20,7 +20,7 @@ USER_REQUEST = endpoints.ResourceContainer(
     user_name=messages.StringField(1),
     email=messages.StringField(2))
 HIGH_SCORES_REQUEST = endpoints.ResourceContainer(
-    number_of_results=messages.StringField(1),
+    number_of_results=messages.IntegerField(1, default=10),
     difficulty=messages.StringField(2)
 )
 # TODO: SCORE_REQUEST?
@@ -215,7 +215,7 @@ class HangmanApi(remote.Service):
 # ========== SCORES (GENERAL POPULATION ENDPOINT API METHODS ==========
     @endpoints.method(request_message=HIGH_SCORES_REQUEST,
                       response_message=ScoreForms,
-                      path='scores/high/limit/{number_of_results}',
+                      path='scores/{difficulty}/high',
                       name='get_high_scores',
                       http_method='GET')
     def get_high_scores(self, request):
@@ -226,10 +226,14 @@ class HangmanApi(remote.Service):
         """
         if getattr(request, 'difficulty') in (None, []):
             raise endpoints.BadRequestException(
-                'The request is missing a game difficulty!')
+                'The request is missing a game difficulty! ')
         difficulty = str(getattr(request, 'difficulty'))
-        # game = Game.new_game(user.key, getattr(request, 'difficulty'))
-
+        try:
+            getattr(GameDifficulty, difficulty)
+        except AttributeError:
+            raise endpoints.BadRequestException('Attribute error, '
+                'parameter: difficulty.  Valid values: EASY, NORMAL, '
+                'HARD, EXPERT')
         scores = Score.query()
         scores = scores.order(Score.guesses)
         scores = scores.order(-Score.date)
@@ -238,7 +242,7 @@ class HangmanApi(remote.Service):
             Score.won == True)
         # get only the limit of results requested
         scores = scores.fetch(int(request.number_of_results))
-        #print request.number_of_results
+        #   print request.number_of_results
         return ScoreForms(items=[score.to_form() for score in scores])
 
 
