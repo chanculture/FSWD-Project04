@@ -179,6 +179,20 @@ class ScoreForms(messages.Message):
     items = messages.MessageField(ScoreForm, 1, repeated=True)
 
 
+class RankingForm(messages.Message):
+    """RankingForm for outbound User Ranking information"""
+    user_name = messages.StringField(1, required=True)
+    difficulty = messages.EnumField('GameDifficulty', 2,
+        required=True)
+    win_percentage = messages.FloatField(3, required=True)
+    wins = messages.IntegerField(4, required=True)
+
+
+class RankingForms(messages.Message):
+    """Return multiple RankingForms"""
+    items = messages.MessageField(RankingForm, 1, repeated=True)
+
+
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)

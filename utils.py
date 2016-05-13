@@ -3,6 +3,8 @@
 import logging
 from google.appengine.ext import ndb
 import endpoints
+from models import GameDifficulty
+
 
 def get_by_urlsafe(urlsafe, model):
     """Returns an ndb.Model entity that the urlsafe key points to. Checks
@@ -33,3 +35,19 @@ def get_by_urlsafe(urlsafe, model):
     if not isinstance(entity, model):
         raise ValueError('Incorrect Kind')
     return entity
+
+
+def validateGameDifficultyValue(request, required=False):
+    if required:
+        if getattr(request, 'difficulty') in (None, []):
+            raise endpoints.BadRequestException(
+                'The request is missing a game difficulty!')
+    difficulty = str(getattr(request, 'difficulty'))
+    try:
+        getattr(GameDifficulty, difficulty)
+    except AttributeError:
+        raise endpoints.BadRequestException(
+            'Attribute error, parameter: difficulty.  '
+            'Valid values: EASY, NORMAL, HARD, EXPERT')
+    return difficulty
+

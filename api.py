@@ -6,9 +6,10 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, GameForms,\
-    MakeMoveForm, ScoreForm, ScoreForms
+    MakeMoveForm, ScoreForm, ScoreForms, RankingForm, RankingForms
 from models import GameDifficulty
 from utils import get_by_urlsafe
+from utils import validateGameDifficultyValue
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
 GET_GAME_REQUEST = endpoints.ResourceContainer(
@@ -21,8 +22,9 @@ USER_REQUEST = endpoints.ResourceContainer(
     email=messages.StringField(2))
 HIGH_SCORES_REQUEST = endpoints.ResourceContainer(
     number_of_results=messages.IntegerField(1, default=10),
-    difficulty=messages.StringField(2)
-)
+    difficulty=messages.StringField(2))
+RANKINGS_REQUEST = endpoints.ResourceContainer(
+    difficulty=messages.StringField(1))
 # TODO: SCORE_REQUEST?
 
 MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
@@ -224,16 +226,7 @@ class HangmanApi(remote.Service):
         limited by the number_of_results sorted by best first,
         then the most recent
         """
-        if getattr(request, 'difficulty') in (None, []):
-            raise endpoints.BadRequestException(
-                'The request is missing a game difficulty! ')
-        difficulty = str(getattr(request, 'difficulty'))
-        try:
-            getattr(GameDifficulty, difficulty)
-        except AttributeError:
-            raise endpoints.BadRequestException('Attribute error, '
-                'parameter: difficulty.  Valid values: EASY, NORMAL, '
-                'HARD, EXPERT')
+        difficulty = validateGameDifficultyValue(request, True)
         scores = Score.query()
         scores = scores.order(Score.guesses)
         scores = scores.order(-Score.date)
@@ -245,6 +238,38 @@ class HangmanApi(remote.Service):
         #   print request.number_of_results
         return ScoreForms(items=[score.to_form() for score in scores])
 
+
+    @endpoints.method(request_message=RANKINGS_REQUEST,
+                      response_message=RankingForms,
+                      path='user/rankings',
+                      name='get_user_rankings',
+                      http_method='GET')
+    def get_user_rankings(self, request):
+        """
+        Returns all user ranking given a GameDifficulty level,
+        Determined first by winning percentage then by number
+        if total wins as the tie breaker.
+        """
+        difficulty = validateGameDifficultyValue(request, True)
+        users = User.query().fetch()
+        items = []
+        total_games = 0
+        wins = 0
+        for user in users:
+            scores = Score.query().filter(Score.user == user.key)
+            for score in scores:
+                total_games += 1
+                if score.won:
+                    wins += 1
+            items.append(
+                RankingForm(user_name=user.name,
+                    difficulty=getattr(GameDifficulty, difficulty),
+                    win_percentage=round(float(wins)/total_games*100, 2),
+                    wins=wins)
+                        )
+            total_games = 0
+            wins = 0
+        return RankingForms(items=items)
 
     @endpoints.method(response_message=StringMessage,
                       path='games/average_attempts',
