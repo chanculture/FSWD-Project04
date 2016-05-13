@@ -6,7 +6,8 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, GameForms,\
-    MakeMoveForm, ScoreForm, ScoreForms, RankingForm, RankingForms
+    MakeMoveForm, ScoreForm, ScoreForms, RankingForm, RankingForms,\
+    HistoryForm
 from models import GameDifficulty
 from utils import get_by_urlsafe
 from utils import validateGameDifficultyValue
@@ -126,6 +127,7 @@ class HangmanApi(remote.Service):
                 # TODO: get result for game from SCORE
                 return game.to_form('Game is over. Cannot cancel game.')
             else:
+                game.history.append('Game canceled!')
                 game.end_game(False)
                 return game.to_form('Game canceled!')
         else:
@@ -184,11 +186,25 @@ class HangmanApi(remote.Service):
                     msg += ' Incorrect Guess!'
 
         if game.attempts_remaining < 1:
+            msg = msg + ' Game over! The word was ' + game.word
+            game.history.append('guess:' + guess + ', result:' + msg)
             game.end_game(False)
-            return game.to_form(msg + ' Game over! The word was ' + game.word)
         else:
+            msg = msg + ' Keep Going!'
+            game.history.append('guess:' + guess + ', result:' + msg)
             game.put()
-            return game.to_form(msg + ' Keep Going!')
+        return game.to_form(msg)
+
+
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=HistoryForm,
+                      path='game/history/{urlsafe_game_key}',
+                      name='get_game_history',
+                      http_method='GET')
+    def get_game_history(self, request):
+        """Returns the Game's History"""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        return HistoryForm(history=[history for history in game.history])
 
 # ========== SCORES (SPECIFIC USER) ENDPOINT API METHODS ==========
     @endpoints.method(response_message=ScoreForms,

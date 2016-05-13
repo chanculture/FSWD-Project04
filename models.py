@@ -30,6 +30,7 @@ class Game(ndb.Model):
     # guess_status = ndb.StringProperty(required=True)
     user = ndb.KeyProperty(required=True, kind='User')
     difficulty = ndb.StringProperty(default='NORMAL')
+    history = ndb.StringProperty(repeated=True)
 
     @classmethod
     def new_game(cls, user, difficulty='NORMAL'):
@@ -191,6 +192,11 @@ class RankingForm(messages.Message):
 class RankingForms(messages.Message):
     """Return multiple RankingForms"""
     items = messages.MessageField(RankingForm, 1, repeated=True)
+
+
+class HistoryForm(messages.Message):
+    """Return Game History Information"""
+    history = messages.StringField(1, repeated=True)
 
 
 class StringMessage(messages.Message):
