@@ -14,3 +14,11 @@ indexes:
   properties:
   - name: game_over
   - name: user
+
+- kind: Score
+  properties:
+  - name: difficulty
+  - name: won
+  - name: guesses
+  - name: date
+    direction: desc

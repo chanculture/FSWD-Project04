@@ -7,6 +7,7 @@ from google.appengine.api import taskqueue
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, GameForms,\
     MakeMoveForm, ScoreForm, ScoreForms
+from models import GameDifficulty
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -15,8 +16,13 @@ GET_GAME_REQUEST = endpoints.ResourceContainer(
 MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
-USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
-                                           email=messages.StringField(2))
+USER_REQUEST = endpoints.ResourceContainer(
+    user_name=messages.StringField(1),
+    email=messages.StringField(2))
+HIGH_SCORES_REQUEST = endpoints.ResourceContainer(
+    number_of_results=messages.StringField(1),
+    difficulty=messages.StringField(2)
+)
 # TODO: SCORE_REQUEST?
 
 MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
@@ -88,7 +94,7 @@ class HangmanApi(remote.Service):
         else:
             raise endpoints.NotFoundException('Game not found!')
 
-    # TODO: This might just take the USER_REQUEST resource container
+
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=GameForms,
                       path='user/{user_name}/games',
@@ -182,7 +188,7 @@ class HangmanApi(remote.Service):
             game.put()
             return game.to_form(msg + ' Keep Going!')
 
-# ========== SCORES ENDPOINT API METHODS ==========
+# ========== SCORES (SPECIFIC USER) ENDPOINT API METHODS ==========
     @endpoints.method(response_message=ScoreForms,
                       path='scores',
                       name='get_scores',
@@ -204,6 +210,37 @@ class HangmanApi(remote.Service):
                     'A User with that name does not exist!')
         scores = Score.query(Score.user == user.key)
         return ScoreForms(items=[score.to_form() for score in scores])
+
+
+# ========== SCORES (GENERAL POPULATION ENDPOINT API METHODS ==========
+    @endpoints.method(request_message=HIGH_SCORES_REQUEST,
+                      response_message=ScoreForms,
+                      path='scores/high/limit/{number_of_results}',
+                      name='get_high_scores',
+                      http_method='GET')
+    def get_high_scores(self, request):
+        """
+        Returns the highest scores given a GameDifficulty level,
+        limited by the number_of_results sorted by best first,
+        then the most recent
+        """
+        if getattr(request, 'difficulty') in (None, []):
+            raise endpoints.BadRequestException(
+                'The request is missing a game difficulty!')
+        difficulty = str(getattr(request, 'difficulty'))
+        # game = Game.new_game(user.key, getattr(request, 'difficulty'))
+
+        scores = Score.query()
+        scores = scores.order(Score.guesses)
+        scores = scores.order(-Score.date)
+        # filter by game difficulty and only wons that resulted in a win
+        scores = scores.filter(Score.difficulty == difficulty,\
+            Score.won == True)
+        # get only the limit of results requested
+        scores = scores.fetch(int(request.number_of_results))
+        #print request.number_of_results
+        return ScoreForms(items=[score.to_form() for score in scores])
+
 
     @endpoints.method(response_message=StringMessage,
                       path='games/average_attempts',

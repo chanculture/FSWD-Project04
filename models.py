@@ -63,9 +63,15 @@ class Game(ndb.Model):
         val = ""
         found = False
         for c in self.word:
+            if val == self.word:
+                break
             for guess in self.guesses:
                 if len(guess) == 1 and guess == c:
                     val += c
+                    found = True
+                    break
+                elif len(guess) > 1 and guess == self.word:
+                    val = guess
                     found = True
                     break
             if found:
@@ -97,8 +103,11 @@ class Game(ndb.Model):
         self.game_over = True
         self.put()
         # Add the game to the score 'board'
-        score = Score(user=self.user, date=date.today(), won=won,
-                      guesses=self.attempts_allowed - self.attempts_remaining)
+        score = Score(user=self.user, game=self.key,
+                      date=date.today(), won=won,
+                      guesses=self.attempts_allowed - self.attempts_remaining,
+                      difficulty=self.difficulty
+                      )
         score.put()
 
 
@@ -114,13 +123,16 @@ class GameDifficulty(messages.Enum):
 class Score(ndb.Model):
     """Score object"""
     user = ndb.KeyProperty(required=True, kind='User')
+    game = ndb.KeyProperty(required=True, kind='Game')
     date = ndb.DateProperty(required=True)
     won = ndb.BooleanProperty(required=True)
     guesses = ndb.IntegerProperty(required=True)
+    difficulty = ndb.StringProperty(required=True)
 
     def to_form(self):
         return ScoreForm(user_name=self.user.get().name, won=self.won,
-                         date=str(self.date), guesses=self.guesses)
+                         date=str(self.date), guesses=self.guesses,
+                         difficulty=getattr(GameDifficulty, self.difficulty))
 
 
 # ========== FORMS ==========
@@ -158,6 +170,8 @@ class ScoreForm(messages.Message):
     date = messages.StringField(2, required=True)
     won = messages.BooleanField(3, required=True)
     guesses = messages.IntegerField(4, required=True)
+    difficulty = messages.EnumField('GameDifficulty', 5,
+        required=True)
 
 
 class ScoreForms(messages.Message):
@@ -205,11 +219,11 @@ def get_word_length(difficulty):
     if difficulty == GameDifficulty.EASY:
         word_length = random.choice(range(4, 6))
     elif difficulty == GameDifficulty.NORMAL:
-        word_length = random.choice(range(6, 8))
+        word_length = random.choice(range(6, 9))
     elif difficulty == GameDifficulty.HARD:
         word_length = random.choice(range(9, 13))
     elif difficulty == GameDifficulty.EXPERT:
-        word_length = random.choice(range(12, 18))
+        word_length = random.choice(range(7, 18))
     else:
         word_length = random.choice(range(6, 8))
     return word_length
