@@ -255,6 +255,10 @@ class HangmanApi(remote.Service):
         scores = scores.filter(Score.difficulty == difficulty,\
             Score.won == True)
         # Get only the limit of results requested
+        # Validate number_of_results is a positive integer
+        if int(request.number_of_results) < 1:
+            raise endpoints.BadRequestException(
+                'Number of results must be a positive value')
         scores = scores.fetch(int(request.number_of_results))
         return ScoreForms(items=[score.to_form() for score in scores])
 
