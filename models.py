@@ -60,7 +60,11 @@ class Game(ndb.Model):
         return game
 
     def get_guess_status(self):
-        """This is a computed getter"""
+        """This is a computed getter.
+            Represents the word with correct single letter guesses filled
+            in, and letters not yet guessed filled with a '_' character
+            (underscore).
+        """
         val = ""
         found = False
         for c in self.word:
@@ -82,6 +86,13 @@ class Game(ndb.Model):
         return val
 
     def is_guess_correct(self, guess):
+        """Helper function to quickly determine if a guess is contained
+            in the word
+        Args:
+            guess[string]: The user's guess
+        Returns:
+            True if the guess id contained in the Game's word, False otherwise
+        """
         return self.word.find(guess) >= 0
 
     def to_form(self, message=''):
