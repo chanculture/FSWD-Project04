@@ -1,0 +1,57 @@
+Design Decisions
+==========
+
+Datastore
+==========
+
+Kind: Game
+----------
+Class Definition:
+    attempts_allowed = ndb.IntegerProperty(required=True, default=8)
+    attempts_remaining = ndb.IntegerProperty(required=True, default=8)
+    game_over = ndb.BooleanProperty(required=True, default=False)
+    guesses = ndb.StringProperty(repeated=True)
+    user = ndb.KeyProperty(required=True, kind='User')
+    difficulty = ndb.StringProperty(default='NORMAL')
+    history = ndb.StringProperty(repeated=True)
+    
+difficulty: was added to the Game Kind to give the user more flexibility in terms of how
+difficult they want to make the Hangman game.
+
+history: I decided to add to the history of the game moves to the Game kind.  The 
+motivation behind this decision was because when querying for a specific game
+(get_game_history), the query is by Kind and filter by the key property, with no other
+filters necessary.
+
+guess_status: Guess status was not added to the datastore.  Guess status is a visual
+representation of the current state of the game.  For example:
+
+If the word to guess is BASEBALL, when the game begins the game_status is ________.
+If the user guesses 'A', then the game_status will be _A___A__.  The attempts remaining 
+	will not change.
+If the user guesses 'L', then the game_status will be _A--_ALL.  The attempts remaining
+	will not change.
+If the user guesses 'M', then the game_status will remain _A--_ALL, and the attempts
+	remaining will be decremented by 1.
+
+Because game_status was not added to the Game Kind, this value becomes a computed property
+for the GameForm class.  When a game is queried and return in GameForm, the guesses are
+compared to the Game.word to compute to the guess_status.
+
+
+Kind: Score
+----------
+Class Definition:
+	user = ndb.KeyProperty(required=True, kind='User')
+    game = ndb.KeyProperty(required=True, kind='Game')
+    date = ndb.DateProperty(required=True)
+    won = ndb.BooleanProperty(required=True)
+    guesses = ndb.IntegerProperty(required=True)
+    difficulty = ndb.StringProperty(required=True)
+    
+game: the game key property was added to the Score Kind so that when a score can be 
+associated back to the game that created it.
+
+difficulty: even though the game key was added to the Score kind, I decided to store the
+difficulty level on Score kind to make querying by difficulty level easier when creating
+the leaderboard (get_high_scores)
