@@ -24,10 +24,6 @@ class Game(ndb.Model):
     attempts_remaining = ndb.IntegerProperty(required=True, default=8)
     game_over = ndb.BooleanProperty(required=True, default=False)
     guesses = ndb.StringProperty(repeated=True)
-    # guess_status represents the word with correct guesses filled
-    # in, and letters not yet guessed filled with a '_' character
-    # This will be a computed value.
-    # guess_status = ndb.StringProperty(required=True)
     user = ndb.KeyProperty(required=True, kind='User')
     difficulty = ndb.StringProperty(default='NORMAL')
     history = ndb.StringProperty(repeated=True)
@@ -37,13 +33,12 @@ class Game(ndb.Model):
         """Creates and returns a new game"""
         # determine word length based on difficulty selected
         word_length = get_word_length(difficulty)
+        # Get the word
         url = ('http://randomword.setgetgo.com/get.php?len=%s'
            % word_length)
         word = urllib2.urlopen(url).read()
         # uppercase the word
         word = word.upper()
-        # DEVELOPMENT
-        # print word
         if len(word) < 4:
             raise ValueError('Unable to generate a word to guess!')
         # determine the number of incorrect guesses are allowed.
@@ -89,7 +84,7 @@ class Game(ndb.Model):
         """Helper function to quickly determine if a guess is contained
             in the word
         Args:
-            guess[string]: The user's guess
+            :guess<string>: The user's guess
         Returns:
             True if the guess id contained in the Game's word, False otherwise
         """
@@ -220,9 +215,9 @@ def get_attempts_allowed(difficulty):
     """
     This method determines the number of incorrect guesses
     allowed, based on the difficulty of the game.
-    inputs:
+    Args:
         :difficulty <GameDifficulty:enum>
-    output:
+    Returns:
         :<Int> the number of incorrect guesses allowed before
     """
     if difficulty == GameDifficulty.EASY:
