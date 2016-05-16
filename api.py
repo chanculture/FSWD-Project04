@@ -271,17 +271,23 @@ class HangmanApi(remote.Service):
         total_games = 0
         wins = 0
         for user in users:
-            scores = Score.query().filter(Score.user == user.key)
+            scores = Score.query()
+            # Filter by game difficulty and only wons that resulted in a win
+            scores = scores.filter(Score.user == user.key, \
+                Score.difficulty == difficulty)
+            scores.fetch()
+
             for score in scores:
                 total_games += 1
                 if score.won:
                     wins += 1
-            items.append(
-                RankingForm(user_name=user.name,
-                    difficulty=getattr(GameDifficulty, difficulty),
-                    win_percentage=round(float(wins)/total_games*100, 2),
-                    wins=wins)
-                        )
+            if total_games > 0:
+                items.append(
+                    RankingForm(user_name=user.name,
+                        difficulty=getattr(GameDifficulty, difficulty),
+                        win_percentage=round(float(wins)/total_games*100, 2),
+                        wins=wins)
+                            )
             total_games = 0
             wins = 0
         return RankingForms(items=items)
