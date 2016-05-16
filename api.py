@@ -11,6 +11,7 @@ from models import StringMessage, NewGameForm, GameForm, GameForms,\
 from models import GameDifficulty
 from utils import get_by_urlsafe
 from utils import validateGameDifficultyValue
+from utils import validateEmail
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
 GET_GAME_REQUEST = endpoints.ResourceContainer(
@@ -44,7 +45,14 @@ class HangmanApi(remote.Service):
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException(
                     'A User with that name already exists!')
-        user = User(name=request.user_name, email=request.email)
+        email = ''
+        if not getattr(request, 'email') == None:
+            email = str(getattr(request, 'email'))
+        if len(email) > 0:
+            if not validateEmail(email):
+                raise endpoints.BadRequestException(
+                    'The given email is invalid!')
+        user = User(name=request.user_name, email=email)
         user.put()
         return StringMessage(message='User {} created!'.format(
                 request.user_name))

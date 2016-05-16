@@ -4,6 +4,7 @@ import logging
 from google.appengine.ext import ndb
 import endpoints
 from models import GameDifficulty
+import re
 
 GAME_DIFFICULTY_VALUE_ERROR_MESSAGE = \
     'Attribute error, parameter: difficulty.  ' \
@@ -76,4 +77,8 @@ def validateGameDifficultyValue(request, required=False):
         raise endpoints.BadRequestException(
             GAME_DIFFICULTY_VALUE_ERROR_MESSAGE)
     return difficulty
+
+def validateEmail(email):
+    return re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        email)
 
