@@ -16,11 +16,12 @@ Class Definition:
     history = ndb.StringProperty(repeated=True)
     
 difficulty: was added to the Game Kind to give the user more flexibility in terms of how
-difficult they want to make the Hangman game.
+difficult they want to make the Hangman game.  The difficulty parameter affects both
+incorrect guess attempts allowed, as well as the general length of the word.
 
-history: I decided to add to the history of the game moves to the Game kind.  The 
+history: I decided to add the history of the game moves to the Game kind.  The 
 motivation behind this decision was because when querying for a specific game
-(get_game_history), the query is by Kind and filter by the key property, with no other
+(get_game_history), the query is by Kind and filter by property (key), with no other
 filters necessary.
 
 guess_status: Guess status was not added to the datastore.  Guess status is a visual
@@ -49,7 +50,7 @@ Class Definition:
     guesses = ndb.IntegerProperty(required=True)
     difficulty = ndb.StringProperty(required=True)
     
-game: the game key property was added to the Score Kind so that when a score can be 
+game: the game key property was added to the Score Kind so that a score can be 
 associated back to the game that created it.
 
 difficulty: even though the game key was added to the Score kind, I decided to store the

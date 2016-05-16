@@ -21,6 +21,40 @@ https://github.com/chanculture/FSWD-Project04
 
 Google Application Name: udacity-p4-project
 
+Game Instructions
+==========
+General API instructions
+----------
+1. In order to play Hangman through the HangmanApi, the client must first create a user.
+To do so, the client should use API endpoint create_user
+path: user/create_user
+(see API endpoints for details)
+2. After a user is created.  A new game must be created.  User API endpoint new_game
+path: game
+(see API endpoints for details)
+3. After a game is create, the user can start making guesses passing the url safe game key
+to API endpoint make_move
+path: game/{urlsafe_game_key}
+(see API endpoints for details)
+4. User can continue making guesses until the game has completed, or they can cancel the 
+game using API endpoint cancel_game
+path: game/cancel/{urlsafe_game_key}'
+(see API endpoints for details)
+
+Hangman Rules
+----------
+Each game starts with a new word that is not disclosed to the player.  The word's 
+character length is disclosed to the player.  Dependent on the difficulty level chosen for
+the game, the length of the word will be between 4 and 18 characters.  The player guesses 
+what letters the game's word contain, or alternatively a whole word can be guessed in an 
+attempt to solve the game word and win the game.  Dependent on the difficulty level 
+chosen for the game, the user will be given between 5 and 9 guess attempts.  However the 
+number of guess attempts that will actually occur depends on the number of guesses that 
+result in an incorrect guess.  An incorrect guess is defined as a guess attempt of a 
+single English alphabet letter that is not contained in game's target word, or a word in 
+an attempt to solve the game's word.  It is important to understand that an attempt to 
+solve the word will not give any further information to the player except whether the
+guessed word was correct or not.
 
 API Endpoints
 ==========
@@ -32,8 +66,9 @@ http method: POST
 URL Params: None
 Data Params
 ----------
-(required)user_name[string]:unique user name
-(optional)email[string]:email address of user
+(required)user_name[string]:unique user name. Value must be alphanumeric with no spaces
+	and unique within the HangmanApi Datastore.
+(optional)email[string]:email address of user.
 
 Success Response
 ----------
@@ -48,8 +83,8 @@ Content: { "message": "A User with that name already exists!" }
 
 New Game
 ----------
-Path: game
-http method:POST
+path: game
+http method: POST
 URL Params: None
 Data Params
 ----------
@@ -99,8 +134,8 @@ Reason: Invalid user_name in request
 
 Get Game
 ----------
-game/{urlsafe_game_key}
-http method:GET
+path: game/{urlsafe_game_key}
+http method: GET
 URL Params
 ----------
 (required)urlsafe_game_key[string]: the url safe game key used to manipulate the game
@@ -120,8 +155,8 @@ Reason: Given key did not match any records
 
 Get User Games
 ----------
-user/{user_name}/games
-http method:GET
+path: user/{user_name}/games
+http method: GET
 URL Params
 ----------
 (required)user_name[string]: User's user_name for HangmanAPI
@@ -141,8 +176,8 @@ Reason: Entered a user_name that does not match a user in the HangmanAPI
 
 Cancel Game
 ----------
-game/cancel/{urlsafe_game_key}'
-http method:POST
+path: game/cancel/{urlsafe_game_key}'
+http method: POST
 URL Params
 ----------
 (required)urlsafe_game_key[string]: the url safe game key used to manipulate the game
@@ -167,8 +202,8 @@ Reason: urlsafe_game_key value did not match a record in HangmagAPI
 
 Make Move
 ----------
-game/{urlsafe_game_key}
-http method:PUT
+path: game/{urlsafe_game_key}
+http method: PUT
 URL Params
 ----------
 (required)urlsafe_game_key[string]: the url safe game key used to manipulate the game
@@ -201,11 +236,10 @@ Content: { "Error parsing ProtoRPC request (Unable to parse request content:
 Reason: the guess field in the request is missing
 
 
-
 Get Game History
 ----------
-game/history/{urlsafe_game_key}'
-http method:GET
+path: game/history/{urlsafe_game_key}'
+http method: GET
 URL Params
 ----------
 (required)urlsafe_game_key[string]: the url safe game key used to manipulate the game
@@ -234,8 +268,8 @@ Reason: the give urlsafe_game_key does not match a record in HangmanAPI
 
 Get Scores
 ----------
-scores
-http method:GET
+path: scores
+http method: GET
 URL Params: None
 Data Params: None
 
@@ -257,8 +291,8 @@ Represents a Score Kind
 
 Get User Scores
 ----------
-scores/user/{user_name}
-http method:GET
+path: scores/user/{user_name}
+http method: GET
 URL Params
 ----------
 (required)user_name[string]:User's user name for HangmanAPI
@@ -289,8 +323,8 @@ Reason: user_name given did not match a record in HangmanAPI
 
 Get High Scores
 ----------
-scores/{difficulty}/high
-http method:GET
+path: scores/{difficulty}/high
+http method: GET
 URL Params
 ----------
 (required)difficulty[string]: The difficulty level as defined in GameDifficulty.
@@ -323,8 +357,8 @@ Reason: difficulty value does not match a valid value. See Definitions
 
 Get User Rankings
 ----------
-user/rankings
-http method:GET
+path: user/rankings
+http method: GET
 URL Params
 ----------
 (required)difficulty[string]: The difficulty level as defined in GameDifficulty.
@@ -353,8 +387,8 @@ Reason: difficulty value does not match a valid value. See Definitions
 
 Get Average Attempts
 ----------
-games/average_attempts
-http method:GET
+path: games/average_attempts
+http method: GET
 URL Params: None
 Data Params: None
 
