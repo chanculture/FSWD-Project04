@@ -45,6 +45,11 @@ class HangmanApi(remote.Service):
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException(
                     'A User with that name already exists!')
+        # Validate request.user_name is alphanumeric
+        if not str(request.user_name).isalnum():
+            raise endpoints.BadRequestException(
+                    'User name must be alphanumeric')
+        # If email address is given, validate it.
         email = ''
         if not getattr(request, 'email') == None:
             email = str(getattr(request, 'email'))
