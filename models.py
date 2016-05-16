@@ -32,7 +32,7 @@ class Game(ndb.Model):
     def new_game(cls, user, difficulty='NORMAL'):
         """Creates and returns a new game"""
         # determine word length based on difficulty selected
-        word_length = get_word_length(difficulty)
+        word_length = get_word_length(getattr(GameDifficulty, difficulty))
         # Get the word
         url = ('http://randomword.setgetgo.com/get.php?len=%s'
            % word_length)
@@ -42,7 +42,7 @@ class Game(ndb.Model):
         if len(word) < 4:
             raise ValueError('Unable to generate a word to guess!')
         # determine the number of incorrect guesses are allowed.
-        attempts = get_attempts_allowed(difficulty)
+        attempts = get_attempts_allowed(getattr(GameDifficulty, difficulty))
 
         game = Game(user=user,
                     word=word,
